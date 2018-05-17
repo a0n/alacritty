@@ -45,7 +45,7 @@ x11-dl = "2"
 objc = "0.2.2"
 
 [features]
-default = []
+default = ["live-shader-reload"]
 # Enabling this feature makes shaders automatically reload when changed
 live-shader-reload = []
 nightly = []

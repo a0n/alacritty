@@ -3,7 +3,8 @@ use std::borrow::Cow;
 use std::fs::File;
 use std::io::Write;
 use std::sync::mpsc;
-use std::time::{Instant};
+use std::time::{Instant,Duration};
+use std::thread::sleep;
 
 use serde_json as json;
 use parking_lot::MutexGuard;
@@ -446,7 +447,8 @@ impl<N: Notify> Processor<N> {
             }
         }
 
-        self.wait_for_event = !terminal.dirty;
+        sleep(Duration::from_millis(1000/30));
+        self.wait_for_event = !terminal.needs_draw();// !terminal.dirty;
 
         terminal
     }

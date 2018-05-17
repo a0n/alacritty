@@ -15,6 +15,7 @@
 //! The display subsystem including window management, font rasterization, and
 //! GPU drawing.
 use std::sync::mpsc;
+use std::time::Instant;
 
 use parking_lot::{MutexGuard};
 
@@ -99,6 +100,7 @@ pub struct Display {
     font_size: font::Size,
     size_info: SizeInfo,
     last_background_color: Rgb,
+    birthday: Instant,
 }
 
 /// Can wakeup the render loop from other threads
@@ -127,6 +129,12 @@ impl Display {
     /// Get size info about the display
     pub fn size(&self) -> &SizeInfo {
         &self.size_info
+    }
+
+    pub fn get_time(&self) -> f32 {
+        let time0 = Instant::now().duration_since(self.birthday);
+        let time = time0.as_secs() as f32 + time0.subsec_nanos() as f32 * 1e-9f32;
+        return time;
     }
 
     pub fn new(
@@ -193,7 +201,7 @@ impl Display {
 
         // Clear screen
         let background_color = config.colors().primary.background;
-        renderer.with_api(config, &size_info, 0. /* visual bell intensity */, |api| {
+        renderer.with_api(config, &size_info, 1. /* visual bell intensity */, 0f32, |api| {
             api.clear(background_color);
         });
 
@@ -208,6 +216,7 @@ impl Display {
             font_size: font::Size::new(0.),
             size_info,
             last_background_color: background_color,
+            birthday: Instant::now(),
         })
     }
 
@@ -350,6 +359,7 @@ impl Display {
         let background_color_changed = background_color != self.last_background_color;
         self.last_background_color = background_color;
 
+        let t = self.get_time();
         {
             let glyph_cache = &mut self.glyph_cache;
 
@@ -363,7 +373,7 @@ impl Display {
                 // TODO I wonder if the renderable cells iter could avoid the
                 // mutable borrow
                 let window_focused = self.window.is_focused;
-                self.renderer.with_api(config, &size_info, visual_bell_intensity, |mut api| {
+                self.renderer.with_api(config, &size_info, visual_bell_intensity, t, |mut api| {
                     // Clear screen to update whole background with new color
                     if background_color_changed {
                         api.clear(background_color);
@@ -381,7 +391,7 @@ impl Display {
             if self.render_timer {
                 let timing = format!("{:.3} usec", self.meter.average());
                 let color = Rgb { r: 0xd5, g: 0x4e, b: 0x53 };
-                self.renderer.with_api(config, &size_info, visual_bell_intensity, |mut api| {
+                self.renderer.with_api(config, &size_info, visual_bell_intensity, t, |mut api| {
                     api.render_string(&timing[..], glyph_cache, color);
                 });
             }
@@ -402,7 +412,7 @@ impl Display {
         // worked around to some extent. Since this doesn't actually address the
         // issue of glClear being slow, less time is available for input
         // handling and rendering.
-        self.renderer.with_api(config, &size_info, visual_bell_intensity, |api| {
+        self.renderer.with_api(config, &size_info, visual_bell_intensity, 0f32, |api| {
             api.clear(background_color);
         });
     }

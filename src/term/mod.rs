@@ -868,7 +868,8 @@ impl Term {
 
     #[inline]
     pub fn needs_draw(&self) -> bool {
-        self.dirty
+        // self.dirty
+        true
     }
 
     pub fn string_from_selection(&self, span: &Span) -> String {

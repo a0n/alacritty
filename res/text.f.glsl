@@ -27,9 +27,6 @@ uniform sampler2D mask;
 void main()
 {
     if (background != 0) {
-        if (bg.a == 0.0)
-            discard;
-
         alphaMask = vec4(1.0);
         color = vec4(bg.rgb + vb, 1.0);
     } else {

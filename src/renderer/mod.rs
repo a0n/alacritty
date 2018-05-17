@@ -118,6 +118,9 @@ pub struct ShaderProgram {
     /// Visual bell
     u_visual_bell: GLint,
 
+    /// Time
+    u_time: GLint,
+
     /// Background pass flag
     ///
     /// Rendering is split into two passes; 1 for backgrounds, and one for text
@@ -629,6 +632,7 @@ impl QuadRenderer {
         config: &Config,
         props: &term::SizeInfo,
         visual_bell_intensity: f64,
+        time: f32,
         func: F
     ) -> T
         where F: FnOnce(RenderApi) -> T
@@ -648,6 +652,7 @@ impl QuadRenderer {
             self.program.activate();
             self.program.set_term_uniforms(props);
             self.program.set_visual_bell(visual_bell_intensity as _);
+            self.program.set_time(time);
 
             gl::BindVertexArray(self.vao);
             gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, self.ebo);
@@ -738,12 +743,15 @@ impl<'a> RenderApi<'a> {
     pub fn clear(&self, color: Rgb) {
         let alpha = self.config.background_opacity().get();
         unsafe {
+            /*
             gl::ClearColor(
                 (self.visual_bell_intensity + f32::from(color.r) / 255.0).min(1.0) * alpha,
                 (self.visual_bell_intensity + f32::from(color.g) / 255.0).min(1.0) * alpha,
                 (self.visual_bell_intensity + f32::from(color.b) / 255.0).min(1.0) * alpha,
                 alpha
                 );
+                */
+            gl::ClearColor(0.0, 0.0, 0.0, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT);
         }
     }
@@ -998,12 +1006,13 @@ impl ShaderProgram {
         }
 
         // get uniform locations
-        let (projection, term_dim, cell_dim, visual_bell, background) = unsafe {
+        let (projection, term_dim, cell_dim, visual_bell, time, background) = unsafe {
             (
                 gl::GetUniformLocation(program, cptr!(b"projection\0")),
                 gl::GetUniformLocation(program, cptr!(b"termDim\0")),
                 gl::GetUniformLocation(program, cptr!(b"cellDim\0")),
                 gl::GetUniformLocation(program, cptr!(b"visualBell\0")),
+                gl::GetUniformLocation(program, cptr!(b"time\0")),
                 gl::GetUniformLocation(program, cptr!(b"backgroundPass\0")),
             )
         };
@@ -1016,6 +1025,7 @@ impl ShaderProgram {
             u_term_dim: term_dim,
             u_cell_dim: cell_dim,
             u_visual_bell: visual_bell,
+            u_time: time,
             u_background: background,
             padding_x: config.padding().x,
             padding_y: config.padding().y,
@@ -1070,6 +1080,12 @@ impl ShaderProgram {
     fn set_visual_bell(&self, visual_bell: f32) {
         unsafe {
             gl::Uniform1f(self.u_visual_bell, visual_bell);
+        }
+    }
+
+    fn set_time(&self, time: f32) {
+        unsafe {
+            gl::Uniform1f(self.u_time, time);
         }
     }
 
