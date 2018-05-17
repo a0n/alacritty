@@ -107,7 +107,8 @@ void main()
     }
 
     /* plasma */
-    float t = time * 2.0;
+    float r = sin(time * 0.001);
+    float t = r * r * 400.0;
     float x = cellPosition.x;
     float y = cellPosition.y;
     float p0 = sin(x * 0.002 + t);
@@ -115,7 +116,7 @@ void main()
     float cx = x*0.0005 - 0.5 + 0.5 * sin(t*2);
     float cy = y*0.0005 - 0.5 + 0.5 * cos(t*3.3333);
     float p2 = sin(sqrt(cx*cx+cy*cy)*3+1);
-    float p = (p0 * p1 * p2);
+    float p = (p0 + p1 + p2);
 
     vb = visualBell * 0.0;
     background = backgroundPass;
